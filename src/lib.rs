@@ -36,23 +36,22 @@
     html_logo_url = "https://raw.githubusercontent.com/smol-rs/smol/master/assets/images/logo_fullsize_transparent.png"
 )]
 
-#[cfg(unix)]
-pub mod unix;
-
+#[cfg(feature = "dns")]
 mod addr;
 mod tcp;
 mod udp;
+mod util;
 
+#[cfg(feature = "dns")]
 pub use addr::AsyncToSocketAddrs;
 pub use tcp::{Incoming, TcpListener, TcpStream};
 pub use udp::UdpSocket;
-
-use std::io;
 
 #[doc(no_inline)]
 pub use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 #[doc(no_inline)]
+#[cfg(feature = "dns")]
 pub use std::net::AddrParseError;
 
 /// Converts or resolves addresses to [`SocketAddr`] values.
@@ -66,6 +65,7 @@ pub use std::net::AddrParseError;
 /// }
 /// # std::io::Result::Ok(()) });
 /// ```
+#[cfg(feature = "dns")]
 pub async fn resolve<A: AsyncToSocketAddrs>(addr: A) -> io::Result<Vec<SocketAddr>> {
     Ok(addr.to_socket_addrs().await?.collect())
 }

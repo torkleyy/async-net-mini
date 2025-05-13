@@ -10,10 +10,10 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use async_io::Async;
+use async_io_mini::Async;
 use futures_lite::{prelude::*, ready};
 
-use crate::addr::AsyncToSocketAddrs;
+use crate::util::{ReadableOwned, WritableOwned};
 
 /// A TCP server, listening for connections.
 ///
@@ -90,22 +90,10 @@ impl TcpListener {
     /// ];
     /// let listener = TcpListener::bind(&addrs[..]).await.unwrap();
     /// # std::io::Result::Ok(()) });
-    pub async fn bind<A: AsyncToSocketAddrs>(addr: A) -> io::Result<TcpListener> {
-        let mut last_err = None;
-
-        for addr in addr.to_socket_addrs().await? {
-            match Async::<std::net::TcpListener>::bind(addr) {
-                Ok(listener) => return Ok(TcpListener::new(Arc::new(listener))),
-                Err(err) => last_err = Some(err),
-            }
-        }
-
-        Err(last_err.unwrap_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "could not resolve to any of the addresses",
-            )
-        }))
+    pub async fn bind(addr: SocketAddr) -> io::Result<TcpListener> {
+        Ok(TcpListener::new(Arc::new(
+            Async::<std::net::TcpListener>::bind(addr)?,
+        )))
     }
 
     /// Returns the local address this listener is bound to.
@@ -334,8 +322,8 @@ impl fmt::Debug for Incoming<'_> {
 /// ```
 pub struct TcpStream {
     inner: Arc<Async<std::net::TcpStream>>,
-    readable: Option<async_io::ReadableOwned<std::net::TcpStream>>,
-    writable: Option<async_io::WritableOwned<std::net::TcpStream>>,
+    readable: Option<ReadableOwned<std::net::TcpStream>>,
+    writable: Option<WritableOwned<std::net::TcpStream>>,
 }
 
 impl UnwindSafe for TcpStream {}
@@ -383,22 +371,10 @@ impl TcpStream {
     /// let stream = TcpStream::connect(&addrs[..]).await?;
     /// # std::io::Result::Ok(()) });
     /// ```
-    pub async fn connect<A: AsyncToSocketAddrs>(addr: A) -> io::Result<TcpStream> {
-        let mut last_err = None;
-
-        for addr in addr.to_socket_addrs().await? {
-            match Async::<std::net::TcpStream>::connect(addr).await {
-                Ok(stream) => return Ok(TcpStream::new(Arc::new(stream))),
-                Err(e) => last_err = Some(e),
-            }
-        }
-
-        Err(last_err.unwrap_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "could not connect to any of the addresses",
-            )
-        }))
+    pub async fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
+        Ok(TcpStream::new(Arc::new(
+            Async::<std::net::TcpStream>::connect(addr).await?,
+        )))
     }
 
     /// Returns the local address this stream is bound to.
@@ -662,7 +638,7 @@ impl AsyncRead for TcpStream {
 
             // Initialize the future to wait for readiness.
             if self.readable.is_none() {
-                self.readable = Some(self.inner.clone().readable_owned());
+                self.readable = Some(ReadableOwned::new(self.inner.clone()));
             }
 
             // Poll the future for readiness.
@@ -693,7 +669,7 @@ impl AsyncWrite for TcpStream {
 
             // Initialize the future to wait for readiness.
             if self.writable.is_none() {
-                self.writable = Some(self.inner.clone().writable_owned());
+                self.writable = Some(WritableOwned::new(self.inner.clone()));
             }
 
             // Poll the future for readiness.
@@ -718,7 +694,7 @@ impl AsyncWrite for TcpStream {
 
             // Initialize the future to wait for readiness.
             if self.writable.is_none() {
-                self.writable = Some(self.inner.clone().writable_owned());
+                self.writable = Some(WritableOwned::new(self.inner.clone()));
             }
 
             // Poll the future for readiness.
@@ -751,7 +727,7 @@ impl AsyncWrite for TcpStream {
 
             // Initialize the future to wait for readiness.
             if self.writable.is_none() {
-                self.writable = Some(self.inner.clone().writable_owned());
+                self.writable = Some(WritableOwned::new(self.inner.clone()));
             }
 
             // Poll the future for readiness.

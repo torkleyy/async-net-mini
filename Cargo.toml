@@ -1,13 +1,16 @@
 [package]
-name = "async-net"
+name = "async-net-mini"
 # When publishing a new version:
 # - Update CHANGELOG.md
 # - Create "v2.x.y" git tag
 version = "2.0.0"
-authors = ["Stjepan Glavina <stjepang@gmail.com>"]
+authors = [
+    "Thomas Schaller <me@torkleyy.com>",
+    "Stjepan Glavina <stjepang@gmail.com>",
+]
 edition = "2021"
 rust-version = "1.63"
-description = "Async networking primitives for TCP/UDP/Unix communication"
+description = "Async networking primitives for TCP/UDP/Unix communication for esp-idf"
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/smol-rs/async-net"
 homepage = "https://github.com/smol-rs/async-net"
@@ -16,7 +19,12 @@ keywords = ["networking", "uds", "mio", "reactor", "std"]
 categories = ["asynchronous", "network-programming", "os"]
 exclude = ["/.*"]
 
+[features]
+dns = ["dep:blocking"]
+
 [dependencies]
-async-io = "2.0.0"
-blocking = "1.0.0"
+async-io-mini = { version = "0.3.0", default-features = false, features = [
+    "futures-lite",
+] }
+blocking = { version = "1.6.1", optional = true }
 futures-lite = "2.0.0"

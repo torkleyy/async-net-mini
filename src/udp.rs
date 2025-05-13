@@ -6,9 +6,7 @@ use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, OwnedFd, RawFd};
 use std::os::windows::io::{AsRawSocket, AsSocket, BorrowedSocket, OwnedSocket, RawSocket};
 use std::sync::Arc;
 
-use async_io::Async;
-
-use crate::addr::AsyncToSocketAddrs;
+use async_io_mini::Async;
 
 /// A UDP socket.
 ///
@@ -96,22 +94,10 @@ impl UdpSocket {
     /// let socket = UdpSocket::bind(&addrs[..]).await?;
     /// # std::io::Result::Ok(()) });
     /// ```
-    pub async fn bind<A: AsyncToSocketAddrs>(addr: A) -> io::Result<UdpSocket> {
-        let mut last_err = None;
-
-        for addr in addr.to_socket_addrs().await? {
-            match Async::<std::net::UdpSocket>::bind(addr) {
-                Ok(socket) => return Ok(UdpSocket::new(Arc::new(socket))),
-                Err(err) => last_err = Some(err),
-            }
-        }
-
-        Err(last_err.unwrap_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "could not bind to any of the addresses",
-            )
-        }))
+    pub async fn bind(addr: SocketAddr) -> io::Result<UdpSocket> {
+        Ok(UdpSocket::new(Arc::new(
+            Async::<std::net::UdpSocket>::bind(addr)?,
+        )))
     }
 
     /// Returns the local address this socket is bound to.
@@ -173,22 +159,8 @@ impl UdpSocket {
     /// socket.connect("127.0.0.1:8080").await?;
     /// # std::io::Result::Ok(()) });
     /// ```
-    pub async fn connect<A: AsyncToSocketAddrs>(&self, addr: A) -> io::Result<()> {
-        let mut last_err = None;
-
-        for addr in addr.to_socket_addrs().await? {
-            match self.inner.get_ref().connect(addr) {
-                Ok(()) => return Ok(()),
-                Err(err) => last_err = Some(err),
-            }
-        }
-
-        Err(last_err.unwrap_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "could not connect to any of the addresses",
-            )
-        }))
+    pub async fn connect(&self, addr: SocketAddr) -> io::Result<()> {
+        self.inner.get_ref().connect(addr)
     }
 
     /// Receives a single datagram message.
@@ -258,17 +230,7 @@ impl UdpSocket {
     /// socket.send_to(b"hello", "127.0.0.1:4242").await?;
     /// # std::io::Result::Ok(()) });
     /// ```
-    pub async fn send_to<A: AsyncToSocketAddrs>(&self, buf: &[u8], addr: A) -> io::Result<usize> {
-        let addr = match addr.to_socket_addrs().await?.next() {
-            Some(addr) => addr,
-            None => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "no addresses to send data to",
-                ))
-            }
-        };
-
+    pub async fn send_to(&self, buf: &[u8], addr: SocketAddr) -> io::Result<usize> {
         self.inner.send_to(buf, addr).await
     }
 

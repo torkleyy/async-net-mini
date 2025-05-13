@@ -1,13 +1,15 @@
 # async-net
 
-[![Build](https://github.com/smol-rs/async-net/workflows/Build%20and%20test/badge.svg)](
-https://github.com/smol-rs/async-net/actions)
+[![Build](https://github.com/torkleyy/async-net-mini/workflows/Build%20and%20test/badge.svg)](
+https://github.com/smol-rs/async-net-mini/actions)
 [![License](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue.svg)](
-https://github.com/smol-rs/async-net)
+https://github.com/torkleyy/async-net-mini)
 [![Cargo](https://img.shields.io/crates/v/async-net.svg)](
-https://crates.io/crates/async-net)
-[![Documentation](https://docs.rs/async-net/badge.svg)](
-https://docs.rs/async-net)
+https://crates.io/crates/async-net-mini)
+[![Documentation](https://docs.rs/async-net-mini/badge.svg)](
+https://docs.rs/async-net-mini)
+
+> Fork of https://github.com/smol-rs/async-net using https://github.com/ivmarkov/async-io-mini/tree/master (useful for esp-idf-svc projects)
 
 Async networking primitives for TCP/UDP/Unix communication.
 
@@ -18,9 +20,9 @@ This crate is an async version of [`std::net`] and [`std::os::unix::net`].
 
 ## Implementation
 
-This crate uses [`async-io`] for async I/O and [`blocking`] for DNS lookups.
+This crate uses [`async-io-mini`] for async I/O and optionally [`blocking`] for DNS lookups.
 
-[`async-io`]: https://docs.rs/async-io
+[`async-io-mini`]: https://docs.rs/async-io-mini
 [`blocking`]: https://docs.rs/blocking
 
 ## Examples
